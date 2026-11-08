@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_OnlineStore" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="order-process" name="Order Process" isExecutable="true">
+    <bpmn:startEvent id="Start_OrderPlaced" name="Order placed">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_ReserveStock" name="Reserve stock">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="reserve-stock" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_ProcessPayment" name="Process payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="process-payment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_PaymentOk" name="Payment successful?" default="Flow_No">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_ShipOrder" name="Create shipment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="ship-order" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_SendConfirmation" name="Send confirmation">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-notification" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Completed" name="Order completed">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_ReleaseStock" name="Release stock">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="release-stock" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_CancelOrder" name="Cancel order">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="cancel-order" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_Cancelled" name="Order cancelled">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_OrderPlaced" targetRef="Task_ReserveStock" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_ReserveStock" targetRef="Task_ProcessPayment" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_ProcessPayment" targetRef="Gateway_PaymentOk" />
+    <bpmn:sequenceFlow id="Flow_Yes" name="Yes" sourceRef="Gateway_PaymentOk" targetRef="Task_ShipOrder">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= paymentSuccess = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_No" name="No" sourceRef="Gateway_PaymentOk" targetRef="Task_ReleaseStock" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_ShipOrder" targetRef="Task_SendConfirmation" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_SendConfirmation" targetRef="End_Completed" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_ReleaseStock" targetRef="Task_CancelOrder" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Task_CancelOrder" targetRef="End_Cancelled" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="order-process">
+      <bpmndi:BPMNShape id="Start_OrderPlaced_di" bpmnElement="Start_OrderPlaced">
+        <dc:Bounds x="152" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="136" y="145" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ReserveStock_di" bpmnElement="Task_ReserveStock">
+        <dc:Bounds x="240" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ProcessPayment_di" bpmnElement="Task_ProcessPayment">
+        <dc:Bounds x="390" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_PaymentOk_di" bpmnElement="Gateway_PaymentOk" isMarkerVisible="true">
+        <dc:Bounds x="545" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="530" y="62" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShipOrder_di" bpmnElement="Task_ShipOrder">
+        <dc:Bounds x="650" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendConfirmation_di" bpmnElement="Task_SendConfirmation">
+        <dc:Bounds x="800" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Completed_di" bpmnElement="End_Completed">
+        <dc:Bounds x="952" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="928" y="145" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ReleaseStock_di" bpmnElement="Task_ReleaseStock">
+        <dc:Bounds x="520" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CancelOrder_di" bpmnElement="Task_CancelOrder">
+        <dc:Bounds x="670" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Cancelled_di" bpmnElement="End_Cancelled">
+        <dc:Bounds x="822" y="242" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="800" y="285" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="188" y="120" />
+        <di:waypoint x="240" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="340" y="120" />
+        <di:waypoint x="390" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="490" y="120" />
+        <di:waypoint x="545" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Yes_di" bpmnElement="Flow_Yes">
+        <di:waypoint x="595" y="120" />
+        <di:waypoint x="650" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="614" y="102" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_No_di" bpmnElement="Flow_No">
+        <di:waypoint x="570" y="145" />
+        <di:waypoint x="570" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="578" y="175" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="750" y="120" />
+        <di:waypoint x="800" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="900" y="120" />
+        <di:waypoint x="952" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="620" y="260" />
+        <di:waypoint x="670" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="770" y="260" />
+        <di:waypoint x="822" y="260" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
